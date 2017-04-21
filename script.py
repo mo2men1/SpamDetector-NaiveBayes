@@ -14,23 +14,22 @@ STOP_WORDS = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you'
 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so',
 'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now']
 
-Spam = []
-Ham = []
 vocab = {}
+nEmails = 0
 nSpam = 0;
 nHam = 0;
 nWords_Spam = 0
 nWords_Ham = 0
+
 with open('data/train', 'r') as f:
 	for line in f.readlines():
+		nEmails += 1
 		id, type, *word_arr = line.split(" ")
-		words = {}
 		for i, word in enumerate(word_arr):
 			if i%2 == 0:
 				if word.lower() in STOP_WORDS:
 					continue
 				n = int(word_arr[i+1].split("\n")[0])	#split to remove the \n in the last number
-				words[word] = n
 				if not word in vocab:
 					vocab[word] = {"total": 0, "spam": 0, "ham": 0}
 				vocab[word]["total"] +=  n
@@ -42,15 +41,14 @@ with open('data/train', 'r') as f:
 					nWords_Spam += n
 		if type == "ham":
 			nHam += 1
-			Ham.append({"id": id, "type": type, "words": words})
 		else:
 			nSpam += 1
-			Spam.append({"id": id, "type": type, "words": words})
 
+# Priors
+pHam = nHam / nEmails
+pSpam = nSpam / nEmails
 
-pHam = nHam / (len(Spam) + len(Ham))
-pSpam = nSpam / (len(Spam) + len(Ham))
-
+# Likelihoods
 P_W_given_C = {}
 for word, value in vocab.items():
 	P_W_given_SPAM = (value["spam"] + 1) /(nWords_Spam + len(vocab))
@@ -67,6 +65,7 @@ top_5_ham = list(map(operator.itemgetter(0), sorted_HAM[0:5]))
 print("The top 5 spam words are ", ", ".join(top_5_spam))
 print("The top 5 ham words are ", ", ".join(top_5_ham))
 
+# Test data
 accuracy = 0
 count = 0
 with open('data/test', 'r') as f:
@@ -80,18 +79,25 @@ with open('data/test', 'r') as f:
 				continue
 
 			if i%2 == 0:
+				# In case of not using ln
 				# likelihoods_product_ham *= P_W_given_C[word]["ham"]
 				# likelihoods_product_spam *= P_W_given_C[word]["spam"]
+
+				# In case of using ln
 				likelihoods_product_ham += math.log(P_W_given_C[word]["ham"])
 				likelihoods_product_spam += math.log(P_W_given_C[word]["spam"])
 
+		# In case of not using ln
 		# P_ham = pHam * likelihoods_product_ham
 		# P_spam = pSpam * likelihoods_product_spam
+
+		# In case of using ln
 		P_ham = math.log(pHam) + likelihoods_product_ham
 		P_spam = math.log(pSpam) + likelihoods_product_spam
 		res = "ham" if P_ham > P_spam else "spam"
-		# print("result: %s, ham: %d, spam: %d" % (res, P_ham, P_spam))
 		if res == type:
 			accuracy += 1
+
 accuracy = accuracy / count * 100
+
 print("Accuracy is: %.2f%%" % accuracy)
