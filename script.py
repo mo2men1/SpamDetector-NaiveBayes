@@ -1,3 +1,5 @@
+#data should be located in data/train and data/test
+
 import operator
 import math
 
