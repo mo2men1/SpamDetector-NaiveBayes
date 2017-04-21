@@ -1,6 +1,18 @@
-from pprint import pprint
 import operator
 import math
+
+STOP_WORDS = ['i', 'me', 'my', 'myself', 'we', 'our', 'ours', 'ourselves', 'you', 'your', 'yours',
+'yourself', 'yourselves', 'he', 'him', 'his', 'himself', 'she', 'her', 'hers',
+'herself', 'it', 'its', 'itself', 'they', 'them', 'their', 'theirs', 'themselves',
+'what', 'which', 'who', 'whom', 'this', 'that', 'these', 'those', 'am', 'is', 'are',
+'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does',
+'did', 'doing', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until',
+'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into',
+'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down',
+'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here',
+'there', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more',
+'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so',
+'than', 'too', 'very', 's', 't', 'can', 'will', 'just', 'don', 'should', 'now']
 
 Spam = []
 Ham = []
@@ -15,6 +27,8 @@ with open('data/train', 'r') as f:
 		words = {}
 		for i, word in enumerate(word_arr):
 			if i%2 == 0:
+				if word.lower() in STOP_WORDS:
+					continue
 				n = int(word_arr[i+1].split("\n")[0])	#split to remove the \n in the last number
 				words[word] = n
 				if not word in vocab:
@@ -50,8 +64,8 @@ sorted_HAM = sorted(P_W_given_C.items(), key=lambda x_y: x_y[1]['ham'], reverse=
 top_5_spam = list(map(operator.itemgetter(0), sorted_SPAM[0:5]))
 top_5_ham = list(map(operator.itemgetter(0), sorted_HAM[0:5]))
 
-print(top_5_spam)
-print(top_5_ham)
+print("The top 5 spam words are ", ", ".join(top_5_spam))
+print("The top 5 ham words are ", ", ".join(top_5_ham))
 
 accuracy = 0
 count = 0
@@ -62,6 +76,9 @@ with open('data/test', 'r') as f:
 		likelihoods_product_ham = 1
 		id, type, *word_arr = line.split(" ")
 		for i, word in enumerate(word_arr):
+			if word not in vocab:
+				continue
+
 			if i%2 == 0:
 				# likelihoods_product_ham *= P_W_given_C[word]["ham"]
 				# likelihoods_product_spam *= P_W_given_C[word]["spam"]
@@ -77,4 +94,4 @@ with open('data/test', 'r') as f:
 		if res == type:
 			accuracy += 1
 accuracy = accuracy / count * 100
-print(accuracy)
+print("Accuracy is: %.2f%%" % accuracy)
